@@ -1,10 +1,3 @@
-''' 
-@Author: Dandan   
-@Date: 2020-04-10 00:36:02   
-@Last Modified by:   Dandan   
-@Last Modified time: 2020-04-10 00:36:02  
-'''
-
 import os, json, glob, random
 import numpy as np
 from tqdm import tqdm
@@ -40,15 +33,15 @@ def draw_labels(image, hand_info, hand_idx, width, height, font):
     # hand mask
     mask = Image.new('RGBA', (width, height))
     pmask = ImageDraw.Draw(mask)
-    pmask.rectangle(hand_bbox, outline=hand_rgb[side_idx], width=3, fill=hand_rgba[side_idx])
+    pmask.rectangle(hand_bbox, outline=hand_rgb[side_idx], width=4, fill=hand_rgba[side_idx])
     image.paste(mask, (0,0), mask)
     
     # hand text
     draw.rectangle([hand_bbox[0], max(0, hand_bbox[1]-30), hand_bbox[0]+62, max(0, hand_bbox[1]-30)+30], fill=(255, 255, 255), outline=hand_rgb[side_idx], width=4)
-    draw.text((hand_bbox[0]+6, max(0, hand_bbox[1]-30)-2), f'{side_map3[hand_side]}-{state_map2[int(float(contact_state))]}', font=font, fill=(0,0,0)) # 
+    draw.text((hand_bbox[0]+6, max(0, hand_bbox[1]-30)-2), f'{hand_side.upper()}-{state_map2[int(float(contact_state))]}', font=font, fill=(0,0,0)) # 
 
 
-    if contact_state > 0 and hand_info['obj_bbox'] is not None:
+    if hand_info['obj_bbox'] is not None:
 
         obj_info = hand_info['obj_bbox']
         obj_bbox_ratio = [obj_info['x1'], obj_info['y1'], obj_info['x2'], obj_info['y2']]
@@ -57,7 +50,7 @@ def draw_labels(image, hand_info, hand_idx, width, height, font):
         # object mask
         mask = Image.new('RGBA', (width, height))
         pmask = ImageDraw.Draw(mask)
-        pmask.rectangle(obj_bbox, outline=obj_rgb, width=3, fill=obj_rgba)
+        pmask.rectangle(obj_bbox, outline=obj_rgb, width=4, fill=obj_rgba)
         image.paste(mask, (0,0), mask)
 
         # object text
@@ -74,9 +67,9 @@ def draw_labels(image, hand_info, hand_idx, width, height, font):
         x, y = obj_center[0], obj_center[1]
         draw.ellipse((x-r, y-r, x+r, y+r), fill=obj_rgb)
 
-    elif contact_state > 0 and hand_info['obj_bbox'] is None:
-        print(image_path)
-        print()
+    # elif contact_state > 0 and hand_info['obj_bbox'] is None:
+    #     print(image_path)
+    #     print()
 
     return image
     
@@ -87,9 +80,6 @@ hand_rgba = [(0, 90, 181, 70), (220, 50, 32, 70)]
 obj_rgb = (255, 194, 10)
 obj_rgba = (255, 194, 10, 70)
 
-side_map = {'l':'Left', 'r':'Right'}
-side_map2 = {0:'Left', 1:'Right'}
-side_map3 = {'l':'L', 'r':'R'}
 state_map = {0:'No Contact', 1:'Self Contact', 2:'Another Person', 3:'Portable Object', 4:'Stationary Object'}
 state_map2 = {0:'N', 1:'S', 2:'O', 3:'P', 4:'F'}
 
@@ -100,7 +90,7 @@ if __name__ == '__main__':
     # updata to your location here
     dataset_dir = '/w/dandans/Dataset_to_release/raw'
     annot_filepath = '/w/dandans/Dataset_to_release/data/train.json'
-    vis_dir = './images'
+    vis_dir = './images_draw'
     os.makedirs(vis_dir, exist_ok=True)
 
     with open(annot_filepath, 'r') as f:
@@ -112,39 +102,6 @@ if __name__ == '__main__':
 
     # data
     pbar = tqdm(enumerate(image_list))
-    bad_count = 0
-    bad_count_2 = 0
-    good_count = 0
-    contact_count = 0
-    hand_count = 0
-
-    # for image_idx, image_path in pbar:
-    #     image_info = annot_info[image_path]
-        
-    #     for hand_idx, hand_info in enumerate(image_info):
-
-    #         width, height = hand_info['width'], hand_info['height']
-    #         contact_state = hand_info['contact_state']
-    #         obj_bbox = hand_info['obj_bbox']
-    #         hand_count += 1
-
-    #         if contact_state > 0 :
-    #             contact_count += 1
-
-    #         if contact_state > 0 and obj_bbox is not None:
-    #             good_count += 1
-
-    #         if contact_state > 0 and obj_bbox is None:
-    #             bad_count += 1
-
-    #         if contact_state == 0 and obj_bbox is not None:
-    #             bad_count_2 += 1
-
-    #     pbar.set_description(f'{bad_count} / {hand_count}')
-    # print(bad_count / contact_count)
-    # print(bad_count_2 / contact_count)
-    # print(good_count / contact_count)
-    # exit()
 
     # draw annotation on image
     for image_idx, image_path in tqdm(enumerate(image_list)):
@@ -157,8 +114,7 @@ if __name__ == '__main__':
         for hand_idx, hand_info in enumerate(image_info):
 
             width, height = hand_info['width'], hand_info['height']
-            image = image.resize((640, 360))
-            image = draw_labels(image, hand_info, hand_idx, width=640, height=360, font=font)
+            image = draw_labels(image, hand_info, hand_idx, width, height, font=font)
 
         image.save(f'{vis_dir}/{image_name}.png')
 
